@@ -6,6 +6,8 @@ import yt_dlp
 from fastapi import FastAPI, Query, HTTPException
 from pydantic import BaseModel
 from pyrogram import Client, filters
+from dotenv import load_dotenv
+load_dotenv()
 
 # ======= CONFIG ========
 API_ID = int(os.environ.get("API_ID"))
