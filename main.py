@@ -1,27 +1,17 @@
 import json
-import uuid
-import threading
-import yt_dlp
-from fastapi import FastAPI, Query, HTTPException
-import json
 import os
 import uuid
-import yt_dlp
 import asyncio
+import yt_dlp
 import uvicorn
 
 from fastapi import FastAPI, Query, HTTPException
 from pydantic import BaseModel
 from pyrogram import Client, filters
-
 from config import API_ID, API_HASH, BOT_TOKEN, ADMIN_ID, KEY_FILE, ALLOWED_FILE
 
-# FastAPI app
+# ===== FastAPI App =====
 app = FastAPI()
-
-# Telegram bot
-bot = Client("yt-api-bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
-
 
 class YouTubeData(BaseModel):
     title: str
@@ -29,8 +19,6 @@ class YouTubeData(BaseModel):
     duration: str
     direct_url: str
 
-
-# Helper Functions
 def extract_info(url: str, format_code: str):
     ydl_opts = {
         "quiet": True,
@@ -48,18 +36,15 @@ def extract_info(url: str, format_code: str):
             "direct_url": info.get("url"),
         }
 
-
 def load_keys():
     if not os.path.exists(KEY_FILE):
         return {}
     with open(KEY_FILE, "r") as f:
         return json.load(f)
 
-
 def save_keys(data):
     with open(KEY_FILE, "w") as f:
         json.dump(data, f, indent=2)
-
 
 def load_allowed():
     if not os.path.exists(ALLOWED_FILE):
@@ -67,17 +52,13 @@ def load_allowed():
     with open(ALLOWED_FILE, "r") as f:
         return json.load(f)
 
-
 def save_allowed(data):
     with open(ALLOWED_FILE, "w") as f:
         json.dump(data, f, indent=2)
 
-
-# FastAPI Routes
 @app.get("/")
 def home():
     return {"message": "✅ YouTube API Server is Live!"}
-
 
 @app.get("/video", response_model=YouTubeData)
 def get_video(url: str = Query(...), apikey: str = Query(...)):
@@ -86,7 +67,6 @@ def get_video(url: str = Query(...), apikey: str = Query(...)):
         raise HTTPException(status_code=401, detail="❌ Invalid API Key")
     return extract_info(url, "18")
 
-
 @app.get("/audio", response_model=YouTubeData)
 def get_audio(url: str = Query(...), apikey: str = Query(...)):
     keys = load_keys()
@@ -94,12 +74,12 @@ def get_audio(url: str = Query(...), apikey: str = Query(...)):
         raise HTTPException(status_code=401, detail="❌ Invalid API Key")
     return extract_info(url, "140")
 
+# ========== Telegram Bot ==========
+bot = Client("yt-api-bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# Telegram Bot Commands
 @bot.on_message(filters.command("start"))
 async def start(_, msg):
     await msg.reply("👋 Welcome!\nUse /getkey to generate your API Key.")
-
 
 @bot.on_message(filters.command("getkey"))
 async def getkey(_, msg):
@@ -113,7 +93,6 @@ async def getkey(_, msg):
         save_keys(keys)
         await msg.reply(f"✅ API Key Generated:\n`{key}`")
 
-
 @bot.on_message(filters.command("mykey"))
 async def mykey(_, msg):
     user_id = str(msg.from_user.id)
@@ -122,7 +101,6 @@ async def mykey(_, msg):
         await msg.reply(f"🔑 Your API Key:\n`{keys[user_id]}`")
     else:
         await msg.reply("❌ You don’t have a key yet. Use /getkey")
-
 
 @bot.on_message(filters.command("revoke"))
 async def revoke(_, msg):
@@ -134,7 +112,6 @@ async def revoke(_, msg):
         await msg.reply("🗑️ Your API Key has been revoked.")
     else:
         await msg.reply("❌ You don’t have a key to revoke.")
-
 
 @bot.on_message(filters.command("allow") & filters.user(ADMIN_ID))
 async def allow(_, msg):
@@ -150,11 +127,12 @@ async def allow(_, msg):
         save_allowed(allowed)
         await msg.reply(f"✅ User {uid} is now allowed.")
 
-
-# Main runner
+# ========== Async Runner ==========
 async def main():
     await bot.start()
     print("✅ Telegram bot started.")
+
+    # Run FastAPI server in background
     await asyncio.to_thread(lambda: uvicorn.run(app, host="0.0.0.0", port=8000))
 
 if __name__ == "__main__":
