@@ -1,4 +1,3 @@
-import os
 import json
 import uuid
 import threading
@@ -6,19 +5,8 @@ import yt_dlp
 from fastapi import FastAPI, Query, HTTPException
 from pydantic import BaseModel
 from pyrogram import Client, filters
-from dotenv import load_dotenv
-load_dotenv()
+from config import API_ID, API_HASH, BOT_TOKEN, ADMIN_ID, KEY_FILE, ALLOWED_FILE
 
-# ======= CONFIG ========
-API_ID = int(os.environ.get("API_ID"))
-API_HASH = os.environ.get("API_HASH")
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
-ADMIN_ID = 7666870729  # Replace with your Telegram ID
-KEY_FILE = "apikeys.json"
-ALLOWED_FILE = "allowed.json"
-# ========================
-
-# ====== FastAPI App =======
 app = FastAPI()
 
 class YouTubeData(BaseModel):
@@ -45,20 +33,22 @@ def extract_info(url: str, format_code: str):
         }
 
 def load_keys():
-    if not os.path.exists(KEY_FILE):
+    try:
+        with open(KEY_FILE, "r") as f:
+            return json.load(f)
+    except:
         return {}
-    with open(KEY_FILE, "r") as f:
-        return json.load(f)
 
 def save_keys(data):
     with open(KEY_FILE, "w") as f:
         json.dump(data, f, indent=2)
 
 def load_allowed():
-    if not os.path.exists(ALLOWED_FILE):
+    try:
+        with open(ALLOWED_FILE, "r") as f:
+            return json.load(f)
+    except:
         return []
-    with open(ALLOWED_FILE, "r") as f:
-        return json.load(f)
 
 def save_allowed(data):
     with open(ALLOWED_FILE, "w") as f:
@@ -82,7 +72,6 @@ def get_audio(url: str = Query(...), apikey: str = Query(...)):
         raise HTTPException(status_code=401, detail="❌ Invalid API Key")
     return extract_info(url, "140")
 
-# ========== Telegram Bot ==========
 bot = Client("yt-api-bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 @bot.on_message(filters.command("start"))
@@ -135,8 +124,6 @@ async def allow(_, msg):
         save_allowed(allowed)
         await msg.reply(f"✅ User {uid} is now allowed.")
 
-# ========== Run Both ==========
-
 def start_bot():
     bot.run()
 
@@ -145,6 +132,5 @@ def start_api():
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
 if __name__ == "__main__":
-    import threading
     threading.Thread(target=start_bot).start()
     start_api()
