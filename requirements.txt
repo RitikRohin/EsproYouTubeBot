@@ -1,6 +1,7 @@
 fastapi
 uvicorn
-yt-dlp
 pyrogram
 tgcrypto
+pydantic
 python-dotenv
+yt-dlp
