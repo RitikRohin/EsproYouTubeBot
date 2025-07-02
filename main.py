@@ -143,5 +143,6 @@ def start_api():
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
 if __name__ == "__main__":
+    import threading
     threading.Thread(target=start_bot).start()
     start_api()
