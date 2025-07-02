@@ -1,0 +1,26 @@
+{
+  "name": "Simple Pyrogram Bot",
+  "description": "A simple Telegram bot using Pyrogram, deployable to Heroku",
+  "repository": "https://github.com/RitikRohin/EsproYouTubeBot",
+  "keywords": ["telegram", "pyrogram", "heroku"],
+  "env": {
+    "API_ID": {
+      "description": "Your Telegram API ID from https://my.telegram.org",
+      "required": true
+    },
+    "API_HASH": {
+      "description": "Your Telegram API Hash from https://my.telegram.org",
+      "required": true
+    },
+    "BOT_TOKEN": {
+      "description": "Bot token from @BotFather",
+      "required": true
+    }
+  },
+  "addons": [],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ]
+}
